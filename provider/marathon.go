@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/url"
 	"strconv"
+	"strings"
 	"text/template"
 
 	"github.com/BurntSushi/ty/fun"
@@ -85,6 +86,7 @@ func (provider *Marathon) loadMarathonConfig() *types.Configuration {
 		"getDomain":         provider.getDomain,
 		"getProtocol":       provider.getProtocol,
 		"getPassHostHeader": provider.getPassHostHeader,
+		"getEntryPoints":    provider.getEntryPoints,
 		"getFrontendValue":  provider.getFrontendValue,
 		"getFrontendRule":   provider.getFrontendRule,
 		"replace":           replace,
@@ -283,6 +285,13 @@ func (provider *Marathon) getPassHostHeader(application marathon.Application) st
 		return passHostHeader
 	}
 	return "false"
+}
+
+func (provider *Marathon) getEntryPoints(application marathon.Application) []string {
+	if entryPoints, err := provider.getLabel(application, "traefik.frontend.entryPoints"); err == nil {
+		return strings.Split(entryPoints, ",")
+	}
+	return []string{}
 }
 
 // getFrontendValue returns the frontend value for the specified application, using
