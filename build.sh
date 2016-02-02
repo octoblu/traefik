@@ -27,7 +27,7 @@ compile(){
 package() {
   docker build --tag local/traefik:entrypoint .
   docker tag -f local/traefik:entrypoint local/traefik:latest
-  docker tag -f local/traefik:entrypoint quay.io/octoblu/traefik:v1.0.alpha.428
+  docker tag -f local/traefik:entrypoint quay.io/octoblu/traefik:v1.0.alpha.429
 }
 
 main(){

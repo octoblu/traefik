@@ -70,7 +70,7 @@ func (secretRapper *SecretRapper) logTheEntry(statusCode int) {
 	elapsedTimeNano := time.Now().UnixNano() - secretRapper.startTime.UnixNano()
 	elapsedTime := int(elapsedTimeNano / 1000000)
 
-	logEntry := logentry.New("metric-traefik", "http", secretRapper.backendName, "anonymous", statusCode, elapsedTime)
+	logEntry := logentry.New("metric:traefik", "http", secretRapper.backendName, "anonymous", statusCode, elapsedTime)
 	logEntryBytes, err := json.Marshal(logEntry)
 	logError("NewJobLogger failed: %v\n", err)
 
