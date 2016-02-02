@@ -133,6 +133,9 @@ func init() {
 	traefikCmd.PersistentFlags().StringVar(&arguments.Boltdb.Endpoint, "boltdb.endpoint", "127.0.0.1:4001", "Boltdb server endpoint")
 	traefikCmd.PersistentFlags().StringVar(&arguments.Boltdb.Prefix, "boltdb.prefix", "/traefik", "Prefix used for KV store")
 
+	traefikCmd.PersistentFlags().StringVar(&arguments.JobLoggerRedisURI, "jobloggerRedisUri", "redis://127.0.0.1:6379", "Redis URI to log jobs to")
+	traefikCmd.PersistentFlags().StringVar(&arguments.JobLoggerQueue, "jobloggerQueue", "sample-rate:0.01", "Redis list log jobs to")
+
 	viper.BindPFlag("configFile", traefikCmd.PersistentFlags().Lookup("configFile"))
 	viper.BindPFlag("port", traefikCmd.PersistentFlags().Lookup("port"))
 	viper.BindPFlag("graceTimeOut", traefikCmd.PersistentFlags().Lookup("graceTimeOut"))
@@ -140,6 +143,8 @@ func init() {
 	viper.BindPFlag("logLevel", traefikCmd.PersistentFlags().Lookup("logLevel"))
 	// TODO: wait for this issue to be corrected: https://github.com/spf13/viper/issues/105
 	viper.BindPFlag("providersThrottleDuration", traefikCmd.PersistentFlags().Lookup("providersThrottleDuration"))
+	viper.BindPFlag("jobloggerRedisUri", traefikCmd.PersistentFlags().Lookup("jobloggerRedisUri"))
+	viper.BindPFlag("jobloggerQueue", traefikCmd.PersistentFlags().Lookup("jobloggerQueue"))
 	viper.SetDefault("certificates", &Certificates{})
 	viper.SetDefault("providersThrottleDuration", time.Duration(2*time.Second))
 }

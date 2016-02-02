@@ -1,0 +1,92 @@
+package middlewares
+
+import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"os"
+	"time"
+
+	"github.com/garyburd/redigo/redis"
+	"github.com/gorilla/mux"
+	"github.com/octoblu/tattle/logentry"
+)
+
+// JobLogger holds the oxy circuit breaker.
+type JobLogger struct {
+	redisConn redis.Conn
+	queueName string
+	router    *mux.Router
+}
+
+// NewJobLogger returns a new JobLogger.
+func NewJobLogger(redisURI, queueName string, router *mux.Router) *JobLogger {
+	redisConn, err := redis.DialURL(redisURI)
+	logError("NewJobLogger failed: %v\n", err)
+	return &JobLogger{redisConn, queueName, router}
+}
+
+func (jobLogger *JobLogger) ServeHTTP(rw http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
+	startTime := time.Now()
+	redisConn := jobLogger.redisConn
+	queueName := jobLogger.queueName
+
+	backendName := "unknown"
+
+	routeMatch := mux.RouteMatch{}
+	if jobLogger.router.Match(r, &routeMatch) {
+		backendName = routeMatch.Route.GetName()
+	}
+
+	secret := &SecretRapper{rw, redisConn, startTime, queueName, backendName}
+	next(secret, r)
+}
+
+// SecretRapper wraps in silence
+type SecretRapper struct {
+	rw          http.ResponseWriter
+	redisConn   redis.Conn
+	startTime   time.Time
+	queueName   string
+	backendName string
+}
+
+// Header returns the header map that will be sent by
+// WriteHeader
+func (secretRapper *SecretRapper) Header() http.Header {
+	return secretRapper.rw.Header()
+}
+
+// Write writes the data to the connection as part of an HTTP reply.
+func (secretRapper *SecretRapper) Write(data []byte) (int, error) {
+	return secretRapper.rw.Write(data)
+}
+
+// WriteHeader sends an HTTP response header with status code.
+func (secretRapper *SecretRapper) WriteHeader(statusCode int) {
+	secretRapper.logTheEntry(statusCode)
+	secretRapper.rw.WriteHeader(statusCode)
+}
+
+func (secretRapper *SecretRapper) logTheEntry(statusCode int) {
+	elapsedTimeNano := time.Now().UnixNano() - secretRapper.startTime.UnixNano()
+	elapsedTime := int(elapsedTimeNano / 1000000)
+
+	logEntry := logentry.New("metric-traefik", "http", secretRapper.backendName, "anonymous", statusCode, elapsedTime)
+	logEntryBytes, err := json.Marshal(logEntry)
+	logError("NewJobLogger failed: %v\n", err)
+
+	if err != nil {
+		return
+	}
+
+	_, err = secretRapper.redisConn.Do("lpush", secretRapper.queueName, logEntryBytes)
+	logError("Redis LPUSH failed: %v\n", err)
+}
+
+func logError(fmtMessage string, err error) {
+	if err == nil {
+		return
+	}
+	fmt.Fprintf(os.Stderr, fmtMessage, err.Error())
+}

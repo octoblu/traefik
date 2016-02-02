@@ -8,3 +8,5 @@ traefik.toml
 *.test
 vendor/
 static/
+entrypoint/traefik
+glide.lock

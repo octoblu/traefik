@@ -31,6 +31,8 @@ type GlobalConfiguration struct {
 	Etcd                      *provider.Etcd
 	Zookeeper                 *provider.Zookepper
 	Boltdb                    *provider.BoltDb
+	JobLoggerRedisURI         string
+	JobLoggerQueue            string
 }
 
 // Certificates defines traefik certificates type

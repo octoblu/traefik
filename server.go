@@ -6,6 +6,15 @@ package main
 import (
 	"crypto/tls"
 	"errors"
+	"net/http"
+	"net/url"
+	"os"
+	"os/signal"
+	"reflect"
+	"sync"
+	"syscall"
+	"time"
+
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/negroni"
 	"github.com/emilevauge/traefik/middlewares"
@@ -17,14 +26,6 @@ import (
 	"github.com/mailgun/oxy/forward"
 	"github.com/mailgun/oxy/roundrobin"
 	"github.com/spf13/viper"
-	"net/http"
-	"net/url"
-	"os"
-	"os/signal"
-	"reflect"
-	"sync"
-	"syscall"
-	"time"
 )
 
 var oxyLogger = &OxyLogger{}
@@ -42,6 +43,7 @@ type Server struct {
 	currentConfigurations      configs
 	globalConfiguration        GlobalConfiguration
 	loggerMiddleware           *middlewares.Logger
+	jobLoggerMiddleware        *middlewares.JobLogger
 }
 
 // NewServer returns an initialized Server.
@@ -141,11 +143,12 @@ func (server *Server) enableRouter() {
 
 			newConfigurationRouter, err := server.loadConfig(newConfigurations, server.globalConfiguration)
 			if err == nil {
+				server.jobLoggerMiddleware = middlewares.NewJobLogger(server.globalConfiguration.JobLoggerRedisURI, server.globalConfiguration.JobLoggerQueue, newConfigurationRouter)
 				server.serverLock.Lock()
 				server.currentConfigurations = newConfigurations
 				server.configurationRouter = newConfigurationRouter
 				oldServer := server.srv
-				newsrv, err := server.prepareServer(server.configurationRouter, server.globalConfiguration, oldServer, server.loggerMiddleware, metrics)
+				newsrv, err := server.prepareServer(server.configurationRouter, server.globalConfiguration, oldServer, server.loggerMiddleware, metrics, server.jobLoggerMiddleware)
 				if err != nil {
 					log.Fatal("Error preparing server: ", err)
 				}
