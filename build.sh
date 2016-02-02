@@ -9,6 +9,11 @@ generate(){
   go generate
 }
 
+copy() {
+  mkdir -p dist
+  cp traefik dist/
+}
+
 compile(){
   env \
     GOOS=linux \
@@ -19,13 +24,10 @@ compile(){
       -ldflags '-s'
 }
 
-copy() {
-  cp traefik entrypoint/
-}
-
 package() {
-  docker build --tag local/traefik:entrypoint entrypoint
+  docker build --tag local/traefik:entrypoint .
   docker tag -f local/traefik:entrypoint local/traefik:latest
+  docker tag -f local/traefik:entrypoint quay.io/octoblu/traefik:v1.0.alpha.428
 }
 
 main(){

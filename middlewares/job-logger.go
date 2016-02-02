@@ -14,22 +14,21 @@ import (
 
 // JobLogger holds the oxy circuit breaker.
 type JobLogger struct {
-	redisConn redis.Conn
-	queueName string
-	router    *mux.Router
+	redisChannel chan []byte
+	router       *mux.Router
 }
 
 // NewJobLogger returns a new JobLogger.
 func NewJobLogger(redisURI, queueName string, router *mux.Router) *JobLogger {
-	redisConn, err := redis.DialURL(redisURI)
-	logError("NewJobLogger failed: %v\n", err)
-	return &JobLogger{redisConn, queueName, router}
+	redisChannel := make(chan []byte)
+	go runLogger(redisURI, queueName, redisChannel)
+
+	return &JobLogger{redisChannel, router}
 }
 
 func (jobLogger *JobLogger) ServeHTTP(rw http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
 	startTime := time.Now()
-	redisConn := jobLogger.redisConn
-	queueName := jobLogger.queueName
+	redisChannel := jobLogger.redisChannel
 
 	backendName := "unknown"
 
@@ -38,17 +37,16 @@ func (jobLogger *JobLogger) ServeHTTP(rw http.ResponseWriter, r *http.Request, n
 		backendName = routeMatch.Route.GetName()
 	}
 
-	secret := &SecretRapper{rw, redisConn, startTime, queueName, backendName}
+	secret := &SecretRapper{rw, redisChannel, startTime, backendName}
 	next(secret, r)
 }
 
 // SecretRapper wraps in silence
 type SecretRapper struct {
-	rw          http.ResponseWriter
-	redisConn   redis.Conn
-	startTime   time.Time
-	queueName   string
-	backendName string
+	rw           http.ResponseWriter
+	redisChannel chan []byte
+	startTime    time.Time
+	backendName  string
 }
 
 // Header returns the header map that will be sent by
@@ -80,8 +78,11 @@ func (secretRapper *SecretRapper) logTheEntry(statusCode int) {
 		return
 	}
 
-	_, err = secretRapper.redisConn.Do("lpush", secretRapper.queueName, logEntryBytes)
-	logError("Redis LPUSH failed: %v\n", err)
+	select {
+	case secretRapper.redisChannel <- logEntryBytes:
+	default:
+		fmt.Fprintln(os.Stderr, "Redis not ready, skipping logging")
+	}
 }
 
 func logError(fmtMessage string, err error) {
@@ -89,4 +90,15 @@ func logError(fmtMessage string, err error) {
 		return
 	}
 	fmt.Fprintf(os.Stderr, fmtMessage, err.Error())
+}
+
+func runLogger(redisURI, queueName string, logChannel chan []byte) {
+	redisConn, err := redis.DialURL(redisURI)
+	logError("redis.DialURL Failed: %v\n", err)
+
+	for {
+		logEntryBytes := <-logChannel
+		_, err = redisConn.Do("lpush", queueName, logEntryBytes)
+		logError("Redis LPUSH failed: %v\n", err)
+	}
 }
