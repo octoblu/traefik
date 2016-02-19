@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/signal"
 	"reflect"
+	"sort"
 	"sync"
 	"syscall"
 	"time"
@@ -303,7 +304,10 @@ func (server *Server) loadConfig(configurations configs, globalConfiguration Glo
 	router.NotFoundHandler = http.HandlerFunc(notFoundHandler)
 	backends := map[string]http.Handler{}
 	for _, configuration := range configurations {
-		for frontendName, frontend := range configuration.Frontends {
+		frontendNames := sortedFrontendNamesForConfig(configuration)
+		for _, frontendName := range frontendNames {
+			frontend := configuration.Frontends[frontendName]
+
 			log.Infof("Creating frontend %s", frontendName)
 			fwd, _ := forward.New(forward.Logger(oxyLogger), forward.PassHostHeader(frontend.PassHostHeader))
 			newRoute := router.NewRoute().Name(frontendName)
@@ -372,4 +376,16 @@ func (server *Server) loadConfig(configurations configs, globalConfiguration Glo
 		}
 	}
 	return router, nil
+}
+
+func sortedFrontendNamesForConfig(configuration *types.Configuration) []string {
+	keys := []string{}
+
+	for key := range configuration.Frontends {
+		keys = append(keys, key)
+	}
+
+	sort.Strings(keys)
+
+	return keys
 }
