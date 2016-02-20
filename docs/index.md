@@ -15,6 +15,7 @@ ___
 - [Etcd backend](#etcd)
 - [Zookeeper backend](#zk)
 - [Boltdb backend](#boltdb)
+- [Atomic configuration changes](#atomicconfig)
 - [Benchmarks](#benchmarks)
 
 
@@ -39,8 +40,7 @@ Frontends can be defined using the following rules:
 
 
  A frontend is a set of rules that forwards the incoming http traffic to a backend.
- You can optionally enable `passHostHeader` to
-- []forward client `Host` header to the backend.
+ You can optionally enable `passHostHeader` to forward client `Host` header to the backend.
 
 ### HTTP Backends
 
@@ -95,65 +95,64 @@ Usage:
 
 Available Commands:
   version     Print version
-  help        Help about any command
 
 Flags:
-      --accessLogsFile="log/access.log": Access logs file
-      --boltdb=false: Enable Boltdb backend
-      --boltdb.endpoint="127.0.0.1:4001": Boltdb server endpoint
-      --boltdb.filename="": Override default configuration template. For advanced users :)
-      --boltdb.prefix="/traefik": Prefix used for KV store
-      --boltdb.watch=true: Watch provider
-      --certificates=: SSL certificates and keys. You may add several certificate/key pairs to terminate HTTPS for multiple domain names using TLS SNI
-  -c, --configFile="": Configuration file to use (TOML, JSON, YAML, HCL).
-      --consul=false: Enable Consul backend
-      --consul.endpoint="127.0.0.1:8500": Consul server endpoint
-      --consul.filename="": Override default configuration template. For advanced users :)
-      --consul.prefix="/traefik": Prefix used for KV store
-      --consul.watch=true: Watch provider
-      --docker=false: Enable Docker backend
-      --docker.domain="": Default domain used
-      --docker.endpoint="unix:///var/run/docker.sock": Docker server endpoint. Can be a tcp or a unix socket endpoint
-      --docker.filename="": Override default configuration template. For advanced users :)
-      --docker.tls=false: Enable Docker TLS support
-      --docker.tls.ca="": TLS CA
-      --docker.tls.cert="": TLS cert
-      --docker.tls.insecureSkipVerify=false: TLS insecure skip verify
-      --docker.tls.key="": TLS key
-      --docker.watch=true: Watch provider
-      --etcd=false: Enable Etcd backend
-      --etcd.endpoint="127.0.0.1:4001": Etcd server endpoint
-      --etcd.filename="": Override default configuration template. For advanced users :)
-      --etcd.prefix="/traefik": Prefix used for KV store
-      --etcd.watch=true: Watch provider
-      --file=false: Enable File backend
-      --file.filename="": Override default configuration template. For advanced users :)
-      --file.watch=true: Watch provider
-  -g, --graceTimeOut="10": Timeout in seconds. Duration to give active requests a chance to finish during hot-reloads
-  -h, --help=false: help for traefik
-  -l, --logLevel="ERROR": Log level
-      --marathon=false: Enable Marathon backend
-      --marathon.domain="": Default domain used
-      --marathon.endpoint="http://127.0.0.1:8080": Marathon server endpoint. You can also specify multiple endpoint for Marathon
-      --marathon.filename="": Override default configuration template. For advanced users :)
-      --marathon.networkInterface="eth0": Network interface used to call Marathon web services. Needed in case of multiple network interfaces
-      --marathon.watch=true: Watch provider
-  -p, --port=":80": Reverse proxy port
-      --providersThrottleDuration=2s: Backends throttle duration: minimum duration between 2 events from providers before applying a new configuration. It avoids unnecessary reloads if multiples events are sent in a short amount of time.
-      --traefikLogsFile="log/traefik.log": Traefik logs file
-      --web=false: Enable Web backend
-      --web.address=":8080": Web administration port
-      --web.cerFile="": SSL certificate
-      --web.keyFile="": SSL certificate
-      --web.readOnly=false: Enable read only API
-      --zookeeper=false: Enable Zookeeper backend
-      --zookeeper.endpoint="127.0.0.1:2181": Zookeeper server endpoint
-      --zookeeper.filename="": Override default configuration template. For advanced users :)
-      --zookeeper.prefix="/traefik": Prefix used for KV store
-      --zookeeper.watch=true: Watch provider
+      --accessLogsFile string                Access logs file (default "log/access.log")
+      --boltdb                               Enable Boltdb backend
+      --boltdb.endpoint string               Boltdb server endpoint (default "127.0.0.1:4001")
+      --boltdb.filename string               Override default configuration template. For advanced users :)
+      --boltdb.prefix string                 Prefix used for KV store (default "/traefik")
+      --boltdb.watch                         Watch provider (default true)
+  -c, --configFile string                    Configuration file to use (TOML, JSON, YAML, HCL).
+      --consul                               Enable Consul backend
+      --consul.endpoint string               Consul server endpoint (default "127.0.0.1:8500")
+      --consul.filename string               Override default configuration template. For advanced users :)
+      --consul.prefix string                 Prefix used for KV store (default "/traefik")
+      --consul.watch                         Watch provider (default true)
+      --defaultEntryPoints value             Entrypoints to be used by frontends that do not specify any entrypoint (default &main.DefaultEntryPoints(nil))
+      --docker                               Enable Docker backend
+      --docker.domain string                 Default domain used
+      --docker.endpoint string               Docker server endpoint. Can be a tcp or a unix socket endpoint (default "unix:///var/run/docker.sock")
+      --docker.filename string               Override default configuration template. For advanced users :)
+      --docker.tls                           Enable Docker TLS support
+      --docker.tls.ca string                 TLS CA
+      --docker.tls.cert string               TLS cert
+      --docker.tls.insecureSkipVerify        TLS insecure skip verify
+      --docker.tls.key string                TLS key
+      --docker.watch                         Watch provider (default true)
+      --entryPoints value                    Entrypoints definition using format: --entryPoints='Name:http Address::8000 Redirect.EntryPoint:https' --entryPoints='Name:https Address::4442 TLS:tests/traefik.crt,tests/traefik.key'
+      --etcd                                 Enable Etcd backend
+      --etcd.endpoint string                 Etcd server endpoint (default "127.0.0.1:4001")
+      --etcd.filename string                 Override default configuration template. For advanced users :)
+      --etcd.prefix string                   Prefix used for KV store (default "/traefik")
+      --etcd.watch                           Watch provider (default true)
+      --file                                 Enable File backend
+      --file.filename string                 Override default configuration template. For advanced users :)
+      --file.watch                           Watch provider (default true)
+  -g, --graceTimeOut string                  Timeout in seconds. Duration to give active requests a chance to finish during hot-reloads (default "10")
+  -l, --logLevel string                      Log level (default "ERROR")
+      --marathon                             Enable Marathon backend
+      --marathon.domain string               Default domain used
+      --marathon.endpoint string             Marathon server endpoint. You can also specify multiple endpoint for Marathon (default "http://127.0.0.1:8080")
+      --marathon.filename string             Override default configuration template. For advanced users :)
+      --marathon.networkInterface string     Network interface used to call Marathon web services. Needed in case of multiple network interfaces (default "eth0")
+      --marathon.watch                       Watch provider (default true)
+      --maxIdleConnsPerHost int              If non-zero, controls the maximum idle (keep-alive) to keep per-host.  If zero, DefaultMaxIdleConnsPerHost is used
+  -p, --port string                          Reverse proxy port (default ":80")
+      --providersThrottleDuration duration   Backends throttle duration: minimum duration between 2 events from providers before applying a new configuration. It avoids unnecessary reloads if multiples events are sent in a short amount of time. (default 2s)
+      --traefikLogsFile string               Traefik logs file (default "log/traefik.log")
+      --web                                  Enable Web backend
+      --web.address string                   Web administration port (default ":8080")
+      --web.cerFile string                   SSL certificate
+      --web.keyFile string                   SSL certificate
+      --web.readOnly                         Enable read only API
+      --zookeeper                            Enable Zookeeper backend
+      --zookeeper.endpoint string            Zookeeper server endpoint (default "127.0.0.1:2181")
+      --zookeeper.filename string            Override default configuration template. For advanced users :)
+      --zookeeper.prefix string              Prefix used for KV store (default "/traefik")
+      --zookeeper.watch                      Watch provider (default true)
 
-
-Use "traefik help [command]" for more information about a command.
+Use "traefik [command] --help" for more information about a command.
 ```
 
 ## <a id="global"></a> Global configuration
@@ -164,12 +163,45 @@ Use "traefik help [command]" for more information about a command.
 # Global configuration
 ################################################################
 
-# Reverse proxy port
+# Entrypoints definition
 #
 # Optional
-# Default: ":80"
+# Default:
+# [entryPoints]
+#   [entryPoints.http]
+#   address = ":80"
 #
-# port = ":80"
+# To redirect an http entrypoint to an https entrypoint (with SNI support):
+# [entryPoints]
+#   [entryPoints.http]
+#   address = ":80"
+#     [entryPoints.http.redirect]
+#       entryPoint = "https"
+#   [entryPoints.https]
+#   address = ":443"
+#     [entryPoints.https.tls]
+#       [[entryPoints.https.tls.certificates]]
+#       CertFile = "integration/fixtures/https/snitest.com.cert"
+#       KeyFile = "integration/fixtures/https/snitest.com.key"
+#       [[entryPoints.https.tls.certificates]]
+#       CertFile = "integration/fixtures/https/snitest.org.cert"
+#       KeyFile = "integration/fixtures/https/snitest.org.key"
+#
+# To redirect an entrypoint rewriting the URL:
+# [entryPoints]
+#   [entryPoints.http]
+#   address = ":80"
+#     [entryPoints.http.redirect]
+#       regex = "^http://localhost/(.*)"
+#       replacement = "http://mydomain/$1"
+
+# Entrypoints to be used by frontends that do not specify any entrypoint.
+# Each frontend can specify its own entrypoints.
+#
+# Optional
+# Default: ["http"]
+#
+# defaultEntryPoints = ["http", "https"]
 
 # Timeout in seconds.
 # Duration to give active requests a chance to finish during hot-reloads
@@ -199,15 +231,6 @@ Use "traefik help [command]" for more information about a command.
 #
 # logLevel = "ERROR"
 
-# SSL certificates and keys
-# You may add several certificate/key pairs to terminate HTTPS for multiple domain names using TLS SNI
-#
-# Optional
-#
-# [[certificates]]
-# CertFile = "traefik.crt"
-# KeyFile = "traefik.key"
-
 # Backends throttle duration: minimum duration between 2 events from providers
 # before applying a new configuration. It avoids unnecessary reloads if multiples events
 # are sent in a short amount of time.
@@ -216,6 +239,14 @@ Use "traefik help [command]" for more information about a command.
 # Default: "2s"
 #
 # ProvidersThrottleDuration = "5s"
+
+# If non-zero, controls the maximum idle (keep-alive) to keep per-host.  If zero, DefaultMaxIdleConnsPerHost is used.
+# If you encounter 'too many open files' errors, you can either change this value, or change `ulimit` value.
+#
+# Optional
+# Default: http.DefaultMaxIdleConnsPerHost
+#
+# MaxIdleConnsPerHost = 200
 
 ```
 
@@ -228,7 +259,21 @@ Like any other reverse proxy, Træfɪk can be configured with a file. You have t
 
 ```toml
 # traefik.toml
-port = ":80"
+defaultEntryPoints = ["http", "https"]
+[entryPoints]
+  [entryPoints.http]
+  address = ":80"
+    [entryPoints.http.redirect]
+      entryPoint = "https"
+  [entryPoints.https]
+  address = ":443"
+    [entryPoints.https.tls]
+      [[entryPoints.https.tls.certificates]]
+      CertFile = "integration/fixtures/https/snitest.com.cert"
+      KeyFile = "integration/fixtures/https/snitest.com.key"
+      [[entryPoints.https.tls.certificates]]
+      CertFile = "integration/fixtures/https/snitest.org.cert"
+      KeyFile = "integration/fixtures/https/snitest.org.key"
 graceTimeOut = 10
 logLevel = "DEBUG"
 
@@ -264,7 +309,13 @@ logLevel = "DEBUG"
   [frontends.frontend2]
   backend = "backend1"
   passHostHeader = true
-    [frontends.frontend2.routes.test_2]
+  entrypoints = ["https"] # overrides defaultEntryPoints
+    [frontends.frontend2.routes.test_1]
+    rule = "Host"
+    value = "{subdomain:[a-z]+}.localhost"
+  [frontends.frontend3]
+  entrypoints = ["http", "https"] # overrides defaultEntryPoints
+  backend = "backend2"
     rule = "Path"
     value = "/test"
 ```
@@ -273,7 +324,20 @@ logLevel = "DEBUG"
 
 ```toml
 # traefik.toml
-port = ":80"
+[entryPoints]
+  [entryPoints.http]
+  address = ":80"
+    [entryPoints.http.redirect]
+      entryPoint = "https"
+  [entryPoints.https]
+  address = ":443"
+    [entryPoints.https.tls]
+      [[entryPoints.https.tls.certificates]]
+      CertFile = "integration/fixtures/https/snitest.com.cert"
+      KeyFile = "integration/fixtures/https/snitest.com.key"
+      [[entryPoints.https.tls.certificates]]
+      CertFile = "integration/fixtures/https/snitest.org.cert"
+      KeyFile = "integration/fixtures/https/snitest.org.key"
 graceTimeOut = 10
 logLevel = "DEBUG"
 
@@ -312,10 +376,15 @@ filename = "rules.toml"
   [frontends.frontend2]
   backend = "backend1"
   passHostHeader = true
-    [frontends.frontend2.routes.test_2]
+  entrypoints = ["https"] # overrides defaultEntryPoints
+    [frontends.frontend2.routes.test_1]
+    rule = "Host"
+    value = "{subdomain:[a-z]+}.localhost"
+  [frontends.frontend3]
+  entrypoints = ["http", "https"] # overrides defaultEntryPoints
+  backend = "backend2"
     rule = "Path"
     value = "/test"
-
 ```
 
 If you want Træfɪk to watch file changes automatically, just add:
@@ -528,6 +597,7 @@ Labels can be used on containers to override default behaviour:
 - `traefik.frontend.rule=Host`: override the default frontend rule (Default: Host). See [frontends](#frontends).
 - `traefik.frontend.value=test.example.com`: override the default frontend value (Default: `{containerName}.{domain}`) See [frontends](#frontends). Must be associated with label traefik.frontend.rule.
 - `traefik.frontend.passHostHeader=true`: forward client `Host` header to the backend.
+- `traefik.frontend.entryPoints=http,https`: assign this frontend to entry points `http` and `https`. Overrides `defaultEntryPoints`.
 * `traefik.domain=traefik.localhost`: override the default domain
 
 
@@ -555,11 +625,11 @@ Træfɪk can be configured to use Marathon as a backend configuration:
 #
 endpoint = "http://127.0.0.1:8080"
 
-# Network interface used to call Marathon web services
+# Network interface used to call Marathon web services. Needed in case of multiple network interfaces.
 # Optional
 # Default: "eth0"
 #
-# networkInterface = "eth0"
+networkInterface = "eth0"
 
 # Enable watch Marathon changes
 #
@@ -579,6 +649,21 @@ domain = "marathon.localhost"
 # Optional
 #
 # filename = "marathon.tmpl"
+
+# Enable Marathon basic authentication
+#
+# Optional
+#
+#  [marathon.basic]
+#  httpBasicAuthUser = "foo"
+#  httpBasicPassword = "bar"
+
+# TLS client configuration. https://golang.org/pkg/crypto/tls/#Config
+#
+# Optional
+#
+# [marathon.TLS]
+# InsecureSkipVerify = true
 ```
 
 Labels can be used on containers to override default behaviour:
@@ -592,6 +677,7 @@ Labels can be used on containers to override default behaviour:
 - `traefik.frontend.rule=Host`: override the default frontend rule (Default: Host). See [frontends](#frontends).
 - `traefik.frontend.value=test.example.com`: override the default frontend value (Default: `{appName}.{domain}`) See [frontends](#frontends). Must be associated with label traefik.frontend.rule.
 - `traefik.frontend.passHostHeader=true`: forward client `Host` header to the backend.
+- `traefik.frontend.entryPoints=http,https`: assign this frontend to entry points `http` and `https`. Overrides `defaultEntryPoints`.
 * `traefik.domain=traefik.localhost`: override the default domain
 
 ## <a id="consul"></a> Consul backend
@@ -670,6 +756,7 @@ The Keys-Values structure should look (using `prefix = "/traefik"`):
 |----------------------------------------------------|------------|
 | `/traefik/frontends/frontend2/backend`             | `backend1` |
 | `/traefik/frontends/frontend2/passHostHeader`      | `true`     |
+| `/traefik/frontends/frontend2/entrypoints`         |`http,https`|
 | `/traefik/frontends/frontend2/routes/test_2/rule`  | `Path`     |
 | `/traefik/frontends/frontend2/routes/test_2/value` | `/test`    |
 
@@ -750,6 +837,7 @@ The Keys-Values structure should look (using `prefix = "/traefik"`):
 |----------------------------------------------------|------------|
 | `/traefik/frontends/frontend2/backend`             | `backend1` |
 | `/traefik/frontends/frontend2/passHostHeader`      | `true`     |
+| `/traefik/frontends/frontend2/entrypoints`         |`http,https`|
 | `/traefik/frontends/frontend2/routes/test_2/rule`  | `Path`     |
 | `/traefik/frontends/frontend2/routes/test_2/value` | `/test`    |
 
@@ -829,6 +917,7 @@ The Keys-Values structure should look (using `prefix = "/traefik"`):
 |----------------------------------------------------|------------|
 | `/traefik/frontends/frontend2/backend`             | `backend1` |
 | `/traefik/frontends/frontend2/passHostHeader`      | `true`     |
+| `/traefik/frontends/frontend2/entrypoints`         |`http,https`|
 | `/traefik/frontends/frontend2/routes/test_2/rule`  | `Path`     |
 | `/traefik/frontends/frontend2/routes/test_2/value` | `/test`    |
 
@@ -872,6 +961,44 @@ Træfɪk can be configured to use BoltDB as a backend configuration:
 #
 # filename = "boltdb.tmpl"
 ```
+
+## <a id="atomicconfig"></a> Atomic configuration changes
+
+The [Etcd](https://github.com/coreos/etcd/issues/860) and [Consul](https://github.com/hashicorp/consul/issues/886) backends do not support updating multiple keys atomically. As a result, it may be possible for Træfɪk to read an intermediate configuration state despite judicious use of the `--providersThrottleDuration` flag. To solve this problem, Træfɪk supports a special key called `/traefik/alias`. If set, Træfɪk use the value as an alternative key prefix.
+
+Given the key structure below, Træfɪk will use the `http://172.17.0.2:80` as its only backend (frontend keys have been omitted for brevity).
+
+| Key                                                                     | Value                       |
+|-------------------------------------------------------------------------|-----------------------------|
+| `/traefik/alias`                                                        | `/traefik_configurations/1` |
+| `/traefik_configurations/1/backends/backend1/servers/server1/url`       | `http://172.17.0.2:80`      |
+| `/traefik_configurations/1/backends/backend1/servers/server1/weight`    | `10`                        |
+
+When an atomic configuration change is required, you may write a new configuration at an alternative prefix. Here, although the `/traefik_configurations/2/...` keys have been set, the old configuration is still active because the `/traefik/alias` key still points to `/traefik_configurations/1`:
+
+| Key                                                                     | Value                       |
+|-------------------------------------------------------------------------|-----------------------------|
+| `/traefik/alias`                                                        | `/traefik_configurations/1` |
+| `/traefik_configurations/1/backends/backend1/servers/server1/url`       | `http://172.17.0.2:80`      |
+| `/traefik_configurations/1/backends/backend1/servers/server1/weight`    | `10`                        |
+| `/traefik_configurations/2/backends/backend1/servers/server1/url`       | `http://172.17.0.2:80`      |
+| `/traefik_configurations/2/backends/backend1/servers/server1/weight`    | `5`                        |
+| `/traefik_configurations/2/backends/backend1/servers/server2/url`       | `http://172.17.0.3:80`      |
+| `/traefik_configurations/2/backends/backend1/servers/server2/weight`    | `5`                        |
+
+Once the `/traefik/alias` key is updated, the new `/traefik_configurations/2` configuration becomes active atomically. Here, we have a 50% balance between the `http://172.17.0.3:80` and the `http://172.17.0.4:80` hosts while no traffic is sent to the `172.17.0.2:80` host:
+
+| Key                                                                     | Value                       |
+|-------------------------------------------------------------------------|-----------------------------|
+| `/traefik/alias`                                                        | `/traefik_configurations/2` |
+| `/traefik_configurations/1/backends/backend1/servers/server1/url`       | `http://172.17.0.2:80`      |
+| `/traefik_configurations/1/backends/backend1/servers/server1/weight`    | `10`                        |
+| `/traefik_configurations/2/backends/backend1/servers/server1/url`       | `http://172.17.0.3:80`      |
+| `/traefik_configurations/2/backends/backend1/servers/server1/weight`    | `5`                        |
+| `/traefik_configurations/2/backends/backend1/servers/server2/url`       | `http://172.17.0.4:80`      |
+| `/traefik_configurations/2/backends/backend1/servers/server2/weight`    | `5`                        |
+
+Note that Træfɪk *will not watch for key changes in the `/traefik_configurations` prefix*. It will only watch for changes in the `/traefik` prefix. Further, if the `/traefik/alias` key is set, all other sibling keys with the `/traefik` prefix are ignored.
 
 
 ## <a id="benchmarks"></a> Benchmarks

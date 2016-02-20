@@ -43,7 +43,7 @@ import:
   - package: github.com/alecthomas/units
     ref:     6b4e7dc5e3143b85ea77909c72caf89416fc2915
   - package: github.com/gambol99/go-marathon
-    ref:     8ce3f764250b2de3f2c627d12ca7dd21bd5e7f93
+    ref:     ade11d1dc2884ee1f387078fc28509559b6235d1
   - package: github.com/mailgun/predicate
     ref:     cb0bff91a7ab7cf7571e661ff883fc997bc554a3
   - package: github.com/thoas/stats
@@ -145,7 +145,7 @@ import:
   - package: github.com/donovanhide/eventsource
     ref:     d8a3071799b98cacd30b6da92f536050ccfe6da4
   - package: github.com/golang/glog
-    ref: fca8c8854093a154ff1eb580aae10276ad6b1b5f
+    ref:     fca8c8854093a154ff1eb580aae10276ad6b1b5f
   - package: github.com/spf13/cast
     ref: ee7b3e0353166ab1f3a605294ac8cd2b77953778
   - package: github.com/mitchellh/mapstructure
@@ -169,3 +169,6 @@ import:
     version: 836b6e58b3358112c8291565d01c35b8764070d7
     subpackages:
     - /redis
+  - package: github.com/google/go-querystring/query
+  - package: github.com/vulcand/vulcand/plugin/rewrite
+  - package: github.com/stretchr/testify/mock
