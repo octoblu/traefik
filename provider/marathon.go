@@ -4,12 +4,15 @@ import (
 	"errors"
 	"net/url"
 	"strconv"
+	"strings"
 	"text/template"
 
+	"crypto/tls"
 	"github.com/BurntSushi/ty/fun"
 	log "github.com/Sirupsen/logrus"
 	"github.com/emilevauge/traefik/types"
 	"github.com/gambol99/go-marathon"
+	"net/http"
 )
 
 // Marathon holds configuration of the Marathon provider.
@@ -19,7 +22,8 @@ type Marathon struct {
 	Domain           string
 	NetworkInterface string
 	Basic            *MarathonBasic
-	marathonClient   lightMarathonClient
+	TLS              *tls.Config
+	marathonClient   marathon.Marathon
 }
 
 // MarathonBasic holds basic authentication specific configurations
@@ -42,6 +46,11 @@ func (provider *Marathon) Provide(configurationChan chan<- types.ConfigMessage) 
 	if provider.Basic != nil {
 		config.HTTPBasicAuthUser = provider.Basic.HTTPBasicAuthUser
 		config.HTTPBasicPassword = provider.Basic.HTTPBasicPassword
+	}
+	config.HTTPClient = &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: provider.TLS,
+		},
 	}
 	client, err := marathon.NewClient(config)
 	if err != nil {
@@ -80,14 +89,17 @@ func (provider *Marathon) Provide(configurationChan chan<- types.ConfigMessage) 
 
 func (provider *Marathon) loadMarathonConfig() *types.Configuration {
 	var MarathonFuncMap = template.FuncMap{
-		"getPort":           provider.getPort,
-		"getWeight":         provider.getWeight,
-		"getDomain":         provider.getDomain,
-		"getProtocol":       provider.getProtocol,
-		"getPassHostHeader": provider.getPassHostHeader,
-		"getFrontendValue":  provider.getFrontendValue,
-		"getFrontendRule":   provider.getFrontendRule,
-		"replace":           replace,
+		"getBackend":         provider.getBackend,
+		"getPort":            provider.getPort,
+		"getWeight":          provider.getWeight,
+		"getDomain":          provider.getDomain,
+		"getProtocol":        provider.getProtocol,
+		"getPassHostHeader":  provider.getPassHostHeader,
+		"getEntryPoints":     provider.getEntryPoints,
+		"getFrontendValue":   provider.getFrontendValue,
+		"getFrontendRule":    provider.getFrontendRule,
+		"getFrontendBackend": provider.getFrontendBackend,
+		"replace":            replace,
 	}
 
 	applications, err := provider.marathonClient.Applications(nil)
@@ -96,7 +108,7 @@ func (provider *Marathon) loadMarathonConfig() *types.Configuration {
 		return nil
 	}
 
-	tasks, err := provider.marathonClient.AllTasks((url.Values{"status": []string{"running"}}))
+	tasks, err := provider.marathonClient.AllTasks(&marathon.AllTasksOpts{Status: "running"})
 	if err != nil {
 		log.Errorf("Failed to create a client for marathon, error: %s", err)
 		return nil
@@ -186,7 +198,7 @@ func taskFilter(task marathon.Task, applications *marathon.Applications) bool {
 	//filter healthchecks
 	if application.HasHealthChecks() {
 		if task.HasHealthCheckResults() {
-			for _, healthcheck := range task.HealthCheckResult {
+			for _, healthcheck := range task.HealthCheckResults {
 				// found one bad healthcheck, return false
 				if !healthcheck.Alive {
 					log.Debugf("Filtering marathon task %s with bad healthcheck", task.AppID)
@@ -285,6 +297,13 @@ func (provider *Marathon) getPassHostHeader(application marathon.Application) st
 	return "false"
 }
 
+func (provider *Marathon) getEntryPoints(application marathon.Application) []string {
+	if entryPoints, err := provider.getLabel(application, "traefik.frontend.entryPoints"); err == nil {
+		return strings.Split(entryPoints, ",")
+	}
+	return []string{}
+}
+
 // getFrontendValue returns the frontend value for the specified application, using
 // it's label. It returns a default one if the label is not present.
 func (provider *Marathon) getFrontendValue(application marathon.Application) string {
@@ -301,4 +320,20 @@ func (provider *Marathon) getFrontendRule(application marathon.Application) stri
 		return label
 	}
 	return "Host"
+}
+
+func (provider *Marathon) getBackend(task marathon.Task, applications []marathon.Application) string {
+	application, errApp := getApplication(task, applications)
+	if errApp != nil {
+		log.Errorf("Unable to get marathon application from task %s", task.AppID)
+		return ""
+	}
+	return provider.getFrontendBackend(application)
+}
+
+func (provider *Marathon) getFrontendBackend(application marathon.Application) string {
+	if label, err := provider.getLabel(application, "traefik.backend"); err == nil {
+		return label
+	}
+	return replace("/", "-", application.ID)
 }

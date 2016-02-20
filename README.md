@@ -1,13 +1,13 @@
 ![Træfɪk](http://traefik.github.io/traefik.logo.svg  "Træfɪk")
 ___
 
-[![Circle CI](https://circleci.com/gh/emilevauge/traefik.svg?style=shield&circle-token=:circle-token)](https://circleci.com/gh/emilevauge/traefik)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/EmileVauge/traefik/blob/master/LICENSE.md)
+[![Circle CI](https://circleci.com/gh/emilevauge/traefik/tree/master.png?circle-token)](https://circleci.com/gh/emilevauge/traefik)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](https://github.com/EmileVauge/traefik/blob/master/LICENSE.md)
 [![Join the chat at https://traefik.herokuapp.com](https://img.shields.io/badge/style-register-green.svg?style=social&label=Slack)](https://traefik.herokuapp.com)
 
 
 Træfɪk is a modern HTTP reverse proxy and load balancer made to deploy microservices with ease.
-It supports several backends ([Docker :whale:](https://www.docker.com/), [Mesos/Marathon](https://mesosphere.github.io/marathon/), [Consul](https://consul.io/), [Etcd](https://coreos.com/etcd/), [Zookeeper](https://zookeeper.apache.org), [BoltDB](https://github.com/boltdb/bolt), Rest API, file...) to manage its configuration automatically and dynamically.
+It supports several backends ([Docker :whale:](https://www.docker.com/), [Mesos/Marathon](https://mesosphere.github.io/marathon/), [Consul](https://www.consul.io/), [Etcd](https://coreos.com/etcd/), [Zookeeper](https://zookeeper.apache.org), [BoltDB](https://github.com/boltdb/bolt), Rest API, file...) to manage its configuration automatically and dynamically.
 
 
 ## Features
@@ -22,11 +22,12 @@ It supports several backends ([Docker :whale:](https://www.docker.com/), [Mesos/
 - Circuit breakers on backends
 - Round Robin, rebalancer load-balancers
 - Rest Metrics
-- Tiny docker image included
+- Tiny docker image included [![Image Layers](https://badge.imagelayers.io/emilevauge/traefik:latest.svg)](https://imagelayers.io/?images=emilevauge/traefik:latest 'Image Layers')
 - SSL backends support
 - SSL frontend support
 - Clean AngularJS Web UI
 - Websocket support
+- HTTP/2 support
 
 ## Demo
 
@@ -43,7 +44,7 @@ You can access to a simple HTML frontend of Træfik.
 
 ## Plumbing
 
-- [Oxy](https://github.com/mailgun/oxy/): an awsome proxy library made by Mailgun guys
+- [Oxy](https://github.com/vulcand/oxy): an awsome proxy library made by Mailgun guys
 - [Gorilla mux](https://github.com/gorilla/mux): famous request router
 - [Negroni](https://github.com/codegangsta/negroni): web middlewares made simple
 - [Manners](https://github.com/mailgun/manners): graceful shutdown of http.Handler servers
@@ -75,6 +76,20 @@ You can find the complete documentation [here](docs/index.md).
 ## Benchmarks
 
 Refer to the [benchmarks section](docs/index.md#benchmarks) in the documentation.
+
+## Træfɪk here and there
+
+These projects use Træfɪk internally. If your company uses Træfɪk, we would be glad to get your feedback :) Contact us on [![Join the chat at https://traefik.herokuapp.com](https://img.shields.io/badge/style-register-green.svg?style=social&label=Slack)](https://traefik.herokuapp.com)
+
+- Project [Mantl](https://mantl.io/) from Cisco
+
+![Web UI Providers](docs/img/mantl-logo.png)
+> Mantl is a modern platform for rapidly deploying globally distributed services. A container orchestrator, docker, a network stack, something to pool your logs, something to monitor health, a sprinkle of service discovery and some automation.
+
+- Project [Apollo](http://capgemini.github.io/devops/apollo/) from Cap Gemini
+
+![Web UI Providers](docs/img/apollo-logo.png)
+> Apollo is an open source project to aid with building and deploying IAAS and PAAS services. It is particularly geared towards managing containerized applications across multiple hosts, and big data type workloads. Apollo leverages other open source components to provide basic mechanisms for deployment, maintenance, and scaling of infrastructure and applications.
 
 ## Contributing
 

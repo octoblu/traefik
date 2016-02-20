@@ -1,34 +1,32 @@
 package provider
 
 import (
-	"errors"
-	"net/url"
 	"reflect"
 	"testing"
 
+	"errors"
+	"github.com/emilevauge/traefik/mocks"
 	"github.com/emilevauge/traefik/types"
 	"github.com/gambol99/go-marathon"
+	"github.com/stretchr/testify/mock"
 )
 
 type fakeClient struct {
-	applicationsError bool
-	applications      *marathon.Applications
-	tasksError        bool
-	tasks             *marathon.Tasks
+	mocks.Marathon
 }
 
-func (c *fakeClient) Applications(url.Values) (*marathon.Applications, error) {
-	if c.applicationsError {
-		return nil, errors.New("error")
+func newFakeClient(applicationsError bool, applications *marathon.Applications, tasksError bool, tasks *marathon.Tasks) *fakeClient {
+	// create an instance of our test object
+	fakeClient := new(fakeClient)
+	if applicationsError {
+		fakeClient.On("Applications", mock.AnythingOfType("url.Values")).Return(nil, errors.New("error"))
 	}
-	return c.applications, nil
-}
-
-func (c *fakeClient) AllTasks(v url.Values) (*marathon.Tasks, error) {
-	if c.tasksError {
-		return nil, errors.New("error")
+	fakeClient.On("Applications", mock.AnythingOfType("url.Values")).Return(applications, nil)
+	if tasksError {
+		fakeClient.On("AllTasks", mock.AnythingOfType("*marathon.AllTasksOpts")).Return(nil, errors.New("error"))
 	}
-	return c.tasks, nil
+	fakeClient.On("AllTasks", mock.AnythingOfType("*marathon.AllTasksOpts")).Return(tasks, nil)
+	return fakeClient
 }
 
 func TestMarathonLoadConfig(t *testing.T) {
@@ -84,7 +82,8 @@ func TestMarathonLoadConfig(t *testing.T) {
 			},
 			expectedFrontends: map[string]*types.Frontend{
 				`frontend-test`: {
-					Backend: "backend-test",
+					Backend:     "backend-test",
+					EntryPoints: []string{},
 					Routes: map[string]types.Route{
 						`route-host-test`: {
 							Rule:  "Host",
@@ -109,14 +108,10 @@ func TestMarathonLoadConfig(t *testing.T) {
 	}
 
 	for _, c := range cases {
+		fakeClient := newFakeClient(c.applicationsError, c.applications, c.tasksError, c.tasks)
 		provider := &Marathon{
-			Domain: "docker.localhost",
-			marathonClient: &fakeClient{
-				applicationsError: c.applicationsError,
-				applications:      c.applications,
-				tasksError:        c.tasksError,
-				tasks:             c.tasks,
-			},
+			Domain:         "docker.localhost",
+			marathonClient: fakeClient,
 		}
 		actualConfig := provider.loadMarathonConfig()
 		if c.expectedNil {
@@ -314,7 +309,7 @@ func TestMarathonTaskFilter(t *testing.T) {
 			task: marathon.Task{
 				AppID: "foo",
 				Ports: []int{80},
-				HealthCheckResult: []*marathon.HealthCheckResult{
+				HealthCheckResults: []*marathon.HealthCheckResult{
 					{
 						Alive: false,
 					},
@@ -337,7 +332,7 @@ func TestMarathonTaskFilter(t *testing.T) {
 			task: marathon.Task{
 				AppID: "foo",
 				Ports: []int{80},
-				HealthCheckResult: []*marathon.HealthCheckResult{
+				HealthCheckResults: []*marathon.HealthCheckResult{
 					{
 						Alive: true,
 					},
@@ -378,7 +373,7 @@ func TestMarathonTaskFilter(t *testing.T) {
 			task: marathon.Task{
 				AppID: "foo",
 				Ports: []int{80},
-				HealthCheckResult: []*marathon.HealthCheckResult{
+				HealthCheckResults: []*marathon.HealthCheckResult{
 					{
 						Alive: true,
 					},
@@ -735,6 +730,36 @@ func TestMarathonGetPassHostHeader(t *testing.T) {
 	}
 }
 
+func TestMarathonGetEntryPoints(t *testing.T) {
+	provider := &Marathon{}
+
+	applications := []struct {
+		application marathon.Application
+		expected    []string
+	}{
+		{
+			application: marathon.Application{},
+			expected:    []string{},
+		},
+		{
+			application: marathon.Application{
+				Labels: map[string]string{
+					"traefik.frontend.entryPoints": "http,https",
+				},
+			},
+			expected: []string{"http", "https"},
+		},
+	}
+
+	for _, a := range applications {
+		actual := provider.getEntryPoints(a.application)
+
+		if !reflect.DeepEqual(actual, a.expected) {
+			t.Fatalf("expected %#v, got %#v", a.expected, actual)
+		}
+	}
+}
+
 func TestMarathonGetFrontendValue(t *testing.T) {
 	provider := &Marathon{
 		Domain: "docker.localhost",
@@ -795,6 +820,32 @@ func TestMarathonGetFrontendRule(t *testing.T) {
 
 	for _, a := range applications {
 		actual := provider.getFrontendRule(a.application)
+		if actual != a.expected {
+			t.Fatalf("expected %q, got %q", a.expected, actual)
+		}
+	}
+}
+
+func TestMarathonGetBackend(t *testing.T) {
+	provider := &Marathon{}
+
+	applications := []struct {
+		application marathon.Application
+		expected    string
+	}{
+		{
+			application: marathon.Application{
+				ID: "foo",
+				Labels: map[string]string{
+					"traefik.backend": "bar",
+				},
+			},
+			expected: "bar",
+		},
+	}
+
+	for _, a := range applications {
+		actual := provider.getFrontendBackend(a.application)
 		if actual != a.expected {
 			t.Fatalf("expected %q, got %q", a.expected, actual)
 		}
