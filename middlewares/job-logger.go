@@ -20,7 +20,7 @@ type JobLogger struct {
 
 // NewJobLogger returns a new JobLogger.
 func NewJobLogger(redisURI, queueName string, router *mux.Router) *JobLogger {
-	redisChannel := make(chan []byte)
+	redisChannel := make(chan []byte, 1000)
 	go runLogger(redisURI, queueName, redisChannel)
 
 	return &JobLogger{redisChannel, router}
@@ -95,6 +95,9 @@ func logError(fmtMessage string, err error) {
 func runLogger(redisURI, queueName string, logChannel chan []byte) {
 	redisConn, err := redis.DialURL(redisURI)
 	logError("redis.DialURL Failed: %v\n", err)
+	if err != nil {
+		return
+	}
 
 	for {
 		logEntryBytes := <-logChannel

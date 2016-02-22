@@ -12,17 +12,8 @@ import (
 	"os"
 	"os/signal"
 	"reflect"
-	"sort"
-	"sync"
-	"syscall"
-	"time"
-
-	"net/http"
-	"net/url"
-	"os"
-	"os/signal"
-	"reflect"
 	"regexp"
+	"sort"
 	"sync"
 	"syscall"
 	"time"
@@ -149,12 +140,12 @@ func (server *Server) listenConfigurations() {
 
 			newServerEntryPoints, err := server.loadConfig(newConfigurations, server.globalConfiguration)
 			if err == nil {
-				server.jobLoggerMiddleware = middlewares.NewJobLogger(server.globalConfiguration.JobLoggerRedisURI, server.globalConfiguration.JobLoggerQueue, newConfigurationRouter)
 				server.serverLock.Lock()
 				for newServerEntryPointName, newServerEntryPoint := range newServerEntryPoints {
 					currentServerEntryPoint := server.serverEntryPoints[newServerEntryPointName]
 					server.currentConfigurations = newConfigurations
 					currentServerEntryPoint.httpRouter = newServerEntryPoint.httpRouter
+					server.jobLoggerMiddleware = middlewares.NewJobLogger(server.globalConfiguration.JobLoggerRedisURI, server.globalConfiguration.JobLoggerQueue, currentServerEntryPoint.httpRouter)
 					oldServer := currentServerEntryPoint.httpServer
 					newsrv, err := server.prepareServer(currentServerEntryPoint.httpRouter, server.globalConfiguration.EntryPoints[newServerEntryPointName], oldServer, server.loggerMiddleware, metrics, server.jobLoggerMiddleware)
 					if err != nil {
