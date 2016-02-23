@@ -161,8 +161,8 @@ import:
   - package: github.com/spf13/cobra
     subpackages:
     - /cobra
-  - package: github.com/octoblu/tattle
-    version: ad81e802e460ceb296839901847d07f344f3b1d3
+  - package: github.com/octoblu/go-logentry
+    version: v1.1.0
     subpackages:
     - /logentry
   - package: github.com/garyburd/redigo

@@ -9,7 +9,7 @@ import (
 
 	"github.com/garyburd/redigo/redis"
 	"github.com/gorilla/mux"
-	"github.com/octoblu/tattle/logentry"
+	"github.com/octoblu/go-logentry/logentry"
 )
 
 // JobLogger holds the oxy circuit breaker.
